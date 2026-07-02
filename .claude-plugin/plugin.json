@@ -1,7 +1,10 @@
 {
   "name": "ai-atlas-skills",
-  "description": "Curated, tested Claude Code skills maintained by INOVA IT.",
-  "author": "INOVA IT",
+  "description": "Curated, tested Claude Code skills, built for INOVA IT workflows.",
+  "author": {
+    "name": "Dušan Kovačić",
+    "email": "dusankvcc@gmail.com"
+  },
   "version": "1.0.0",
   "homepage": "https://github.com/kvcc-dusan/ai-atlas-skills"
 }

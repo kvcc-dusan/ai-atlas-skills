@@ -9,7 +9,7 @@
     {
       "name": "ai-atlas-skills",
       "source": "./",
-      "description": "Curated, tested Claude Code skills maintained by INOVA IT.",
+      "description": "Curated, tested Claude Code skills, built for INOVA IT workflows.",
       "version": "1.0.0"
     }
   ]

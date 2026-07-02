@@ -1,6 +1,6 @@
 # ai-atlas-skills
 
-A curated collection of [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills maintained by INOVA IT.
+A curated collection of [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills, built and maintained by [Dušan Kovačić](https://github.com/kvcc-dusan) for INOVA IT workflows.
 
 A skill is a set of instructions that changes how Claude Code approaches a specific class of task — enforcing a procedure, a constraint, or domain knowledge it would otherwise not apply consistently. Every skill in this repo is tested against a fixed evaluation process before it ships (see [docs/testing-methodology.md](docs/testing-methodology.md)).
 
