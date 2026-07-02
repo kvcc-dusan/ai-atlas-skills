@@ -3,8 +3,5 @@
   "description": "Curated, tested Claude Code skills maintained by INOVA IT.",
   "author": "INOVA IT",
   "version": "1.0.0",
-  "skills": [
-    "./skills/figma-grounding"
-  ],
   "homepage": "https://github.com/kvcc-dusan/ai-atlas-skills"
 }

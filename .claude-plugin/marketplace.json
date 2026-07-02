@@ -1,0 +1,17 @@
+{
+  "marketplaceVersion": "1.0.0",
+  "name": "ai-atlas-skills",
+  "owner": "INOVA IT",
+  "plugins": [
+    {
+      "name": "ai-atlas-skills",
+      "version": "1.0.0",
+      "description": "Curated, tested Claude Code skills maintained by INOVA IT.",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/kvcc-dusan/ai-atlas-skills.git",
+        "path": "."
+      }
+    }
+  ]
+}

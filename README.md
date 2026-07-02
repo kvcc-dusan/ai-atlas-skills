@@ -13,12 +13,14 @@ A skill is a set of instructions that changes how Claude Code approaches a speci
 ## Repository structure
 
 ```
-.claude-plugin/plugin.json   Plugin manifest — declares the skill set for future plugin-based install
-skills/<name>/SKILL.md       One directory per skill; references/ holds supporting material
-skills/_template/            Scaffold every new skill starts from
-commands/                    Slash commands that invoke skills
-docs/testing-methodology.md  Mandatory validation process for every skill
-CHANGELOG.md                 Per-skill version history (semver)
+.claude-plugin/plugin.json       Plugin manifest — name/version/metadata
+.claude-plugin/marketplace.json  Marketplace catalog — makes this repo installable via /plugin install
+skills/<name>/SKILL.md           One directory per skill; references/ holds supporting material
+skills/_template/                Scaffold every new skill starts from
+commands/                        Slash commands that invoke skills — Claude Code auto-discovers these,
+                                  same as skills/, no manifest entry needed
+docs/testing-methodology.md      Mandatory validation process for every skill
+CHANGELOG.md                     Per-skill version history (semver)
 ```
 
 ## Requirements
@@ -28,16 +30,27 @@ CHANGELOG.md                 Per-skill version history (semver)
 
 ## Installation
 
-Installation is currently manual. Copy the skill directory and its matching slash command into your local Claude Code configuration:
+Two ways to get skills from this repo into your own Claude Code setup. Both work; pick whichever fits.
+
+### Option A — Plugin install (recommended)
+
+```
+/plugin marketplace add kvcc-dusan/ai-atlas-skills
+/plugin install ai-atlas-skills@kvcc-dusan
+```
+
+Installs every skill and its matching command together — no risk of copying a skill folder and forgetting its command, or vice versa. To pick up new skills added later, re-run `/plugin install`.
+
+### Option B — Manual copy-paste
+
+Copy the skill directory and its matching slash command (if it has one — check the skill's `SKILL.md` frontmatter) into your local Claude Code configuration:
 
 ```bash
 cp -r skills/figma-grounding ~/.claude/skills/figma-grounding
 cp commands/scrapedesign.md ~/.claude/commands/scrapedesign.md
 ```
 
-Restart Claude Code (or start a new session) to pick up the skill and command.
-
-The repository is already structured as a Claude Code plugin (`.claude-plugin/plugin.json`), so it can move to plugin-based installation later without restructuring.
+Restart Claude Code (or start a new session) to pick up the skill and command. You're responsible for grabbing both files and for pulling updates yourself with this method.
 
 ## Versioning
 
