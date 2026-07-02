@@ -1,0 +1,10 @@
+{
+  "name": "ai-atlas-skills",
+  "description": "INOVA IT's collection of Claude Code skills — grounded, tested, install-anywhere.",
+  "author": "Dušan (INOVA IT)",
+  "version": "1.0.0",
+  "skills": [
+    "./skills/figma-grounding"
+  ],
+  "homepage": "https://github.com/kvcc-dusan/ai-atlas-skills"
+}
