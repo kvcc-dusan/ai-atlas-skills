@@ -22,7 +22,3 @@ Restart Claude Code (or start a new session) to pick up the new skill and comman
 ## Adding a skill
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Relationship to `inovait-handbook`
-
-This repo may eventually merge with or reference `inovait-handbook`. Not decided — noting it as open, not a plan.
