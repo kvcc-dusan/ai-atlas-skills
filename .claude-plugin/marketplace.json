@@ -10,7 +10,8 @@
       "name": "ai-atlas-skills",
       "source": "./",
       "description": "Curated, tested Claude Code skills, built for INOVA IT workflows.",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "skills": ["./skills/figma-grounding"]
     }
   ]
 }
