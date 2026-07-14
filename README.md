@@ -9,6 +9,7 @@ A skill is a set of instructions that changes how Claude Code approaches a speci
 | Skill | Version | Description |
 |---|---|---|
 | [`figma-grounding`](skills/figma-grounding/SKILL.md) | 1.1.0 | Forces `get_metadata`/`get_variable_defs`/`get_code_connect_map` extraction before writing any size, spacing, color, or layout-sizing value from a Figma design — flags unresolved tokens and unmapped components instead of guessing from a screenshot. Invoked via the `/scrapedesign` command. |
+| [`figma-to-swiftui`](skills/figma-to-swiftui/SKILL.md) | 1.0.0 — **UNTESTED, do not use** | Converts a Figma frame into production SwiftUI, mapped to the target project's real design system, Code Connect mappings, architecture, and concurrency model. Built on `figma-grounding`. Invoked via the `/figmaswiftui` command. Pending [TESTING-figma-to-swiftui.md](TESTING-figma-to-swiftui.md) before merge to `main`. |
 
 ## Repository structure
 
