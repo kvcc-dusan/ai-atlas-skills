@@ -8,7 +8,7 @@ A skill is a set of instructions that changes how Claude Code approaches a speci
 
 | Skill | Version | Description |
 |---|---|---|
-| [`figma-grounding`](skills/figma-grounding/SKILL.md) | 1.0.0 | Forces `get_metadata`/`get_variable_defs` extraction before writing any size, spacing, or color value from a Figma design — flags unresolved tokens instead of guessing from a screenshot. Invoked via the `/scrapedesign` command. |
+| [`figma-grounding`](skills/figma-grounding/SKILL.md) | 1.1.0 | Forces `get_metadata`/`get_variable_defs`/`get_code_connect_map` extraction before writing any size, spacing, color, or layout-sizing value from a Figma design — flags unresolved tokens and unmapped components instead of guessing from a screenshot. Invoked via the `/scrapedesign` command. |
 
 ## Repository structure
 
