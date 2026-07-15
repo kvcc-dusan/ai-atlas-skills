@@ -9,6 +9,7 @@ A skill is a set of instructions that changes how Claude Code approaches a speci
 | Skill | Version | Description |
 |---|---|---|
 | [`figma-grounding`](skills/figma-grounding/SKILL.md) | 1.1.0 | Forces `get_metadata`/`get_variable_defs`/`get_code_connect_map` extraction before writing any size, spacing, color, or layout-sizing value from a Figma design — flags unresolved tokens and unmapped components instead of guessing from a screenshot. Invoked via the `/scrapedesign` command. |
+| [`figma-to-react`](skills/figma-to-react/SKILL.md) | 1.0.0 — **self-tested, external review pending** | Converts a Figma frame into production React + TypeScript, mapped to the target project's real design system, Code Connect mappings, styling approach (never assumed), and grounded responsive breakpoints. Built on `figma-grounding`. Invoked via the `/figmareact` command. Self-test results in [TESTING-figma-to-react.md](TESTING-figma-to-react.md). |
 
 ## Repository structure
 
