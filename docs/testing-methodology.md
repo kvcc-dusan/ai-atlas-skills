@@ -2,6 +2,10 @@
 
 The standard process for validating a skill before it merges into this repo. Every skill goes through all six steps — this is not optional and not per-skill discretion.
 
+> **For testers:** this file is the standard. The step-by-step manual — setup, commands,
+> the per-run ritual — is [testing-guide.md](testing-guide.md); each skill's concrete
+> cases and prompts live in its `TESTING-<skill>.md` workbook at the repo root.
+
 The reasoning behind the strictness: skills run inside non-deterministic model behavior. A skill that "worked when I tried it" may fire inconsistently, degrade silently when a dependency breaks, or — worst of all — present a guess with the confidence of a verified answer. These failure modes are invisible in a single casual test, which is exactly why the process below exists.
 
 ## 1. Build a 5-case eval set
@@ -21,6 +25,12 @@ Manually write down the correct/expected answer for each case **before** running
 ## 3. Run each case 2–3 times
 
 Not once. Non-determinism means a single clean run is not evidence. A skill that passes a case 1 of 3 times fails that case.
+
+**Every run is isolated: a fresh working folder and a fresh Claude Code session — for
+every run, not just every case.** A continued session remembers the previous run;
+leftover files (a `CLAUDE.md`, generated code) change the skill's behavior. Results
+from a reused session or folder are invalid, because you can't attribute the outcome
+to the skill rather than the contamination.
 
 ## 4. Check for false confidence
 
