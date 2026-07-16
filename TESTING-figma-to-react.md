@@ -1,5 +1,22 @@
 # Testing log — figma-to-react 1.0.0
 
+> **For the external tester (step 6):** read [docs/testing-guide.md](docs/testing-guide.md)
+> first — setup, golden rules (fresh folder + fresh Claude Code session for EVERY run;
+> reused sessions make results invalid), and how to record. Install from branch
+> `feat/figma-to-react`:
+>
+> ```
+> cp -r skills/figma-grounding ~/.claude/skills/figma-grounding
+> cp commands/scrapedesign.md ~/.claude/commands/scrapedesign.md
+> cp -r skills/figma-to-react ~/.claude/skills/figma-to-react
+> cp commands/figmareact.md ~/.claude/commands/figmareact.md
+> ```
+>
+> (`figma-grounding` is on `main`; grab it from there if the branch copy is missing.)
+> Verify: fresh `claude` session, type `/` → `/figmareact` appears. Your part is the
+> **External review** section at the bottom — sections above it are the author's
+> self-test log, kept for reference.
+
 Run per `docs/testing-methodology.md`, 2026-07-15, by the skill author's agent session
 (Claude, Fable 5) with live official Figma MCP access.
 
@@ -107,5 +124,34 @@ sessions; fresh-session re-runs and external review remain open items).
   - The Framelink absent-tools path was procedure-inspected, not live-run (no Framelink
     server connected in this session).
 - Step 6 (external review, 2–3 real users with fixed tasks): **open** — required before
-  merge to `main`, same as `figma-to-swiftui`.
+  merge to `main`, same as `figma-to-swiftui`. Tester section below.
+
+## External review (step 6) — tester fills this in
+
+**Fixed task:** pick ONE real screen frame from a project you work on (or ask Dušan for
+a node link). Per the guide's per-run ritual (fresh folder + fresh session), run:
+
+```
+/figmareact <your figma link with node-id>
+```
+
+Answer its pre-flight questions from your real project knowledge. Do this twice
+(fresh folder/session each time).
+
+**Answer key BEFORE running** (what must the correct result contain for your frame —
+rough structure, what's repeated, what styling approach your project uses):
+______________
+
+**Pass checklist (YES/NO per run):**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| It asked about (or read from a CLAUDE.md) your styling approach — did NOT just assume Tailwind | | |
+| It pulled real Figma data before writing values (you saw get_metadata / get_variable_defs calls) | | |
+| It showed a component mapping table and waited for your OK before writing code | | |
+| Repeated elements became one component + `.map()`, not copies | | |
+| It flagged unknowns (unbound colors, unmapped components, responsive behavior not in the design) instead of quietly deciding | | |
+| It never stated something confidently that it couldn't have known — the #1 check | | |
+
+**Tester:** ______________  **Verdict:** PASS / FAIL — notes: ______________
 
