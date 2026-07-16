@@ -1,121 +1,237 @@
-# figma-to-swiftui — testing results (per docs/testing-methodology.md)
+# figma-to-swiftui — testing workbook
 
-Status: **NOT STARTED** — fill this in as you test. The skill does not merge until
-every section below is complete and passing.
+**Read [docs/testing-guide.md](docs/testing-guide.md) first** — it covers setup, the
+golden rules (fresh folder + fresh session for EVERY run — this is mandatory, results
+from reused sessions are invalid), and how to record results. This file gives you the
+five cases for this specific skill: what to set up, what to paste, and what to check.
 
-Tester: ______________
-Dates tested: ______________
-Environment: Claude Code version ______ / Figma MCP server (desktop or remote?) ______ /
-Target test project: ______________
+**This skill's install** (per the guide's setup step, from branch `feat/figma-to-swiftui`):
 
----
+```
+cp -r skills/figma-grounding ~/.claude/skills/figma-grounding
+cp commands/scrapedesign.md ~/.claude/commands/scrapedesign.md
+cp -r skills/figma-to-swiftui ~/.claude/skills/figma-to-swiftui
+cp commands/figmaswiftui.md ~/.claude/commands/figmaswiftui.md
+```
 
-## 1. Eval set (5 cases)
+Verify: fresh `claude` session, type `/` → `/figmaswiftui` appears.
 
-Pre-drafted below per the methodology's required categories. Adjust the specific
-frames/files to whatever you have access to, but keep the *category* of each case.
+Status: **IN TESTING**
 
-### Case 1 — Simple (happy path)
-A single small frame: one button + one label, in a project that HAS a rules file
-(CLAUDE.md with architecture, DS catalogue, token namespace, iOS version, concurrency
-mode) and Code Connect set up for the button.
+Tester: ______________  Dates: ______________
+Claude Code version (`claude --version`): ______  Figma MCP: desktop / remote
 
-- Figma node used: ______________
-- **Answer key (write BEFORE running):**
-  - Expected component mapping: ______________
-  - Expected tokens used: ______________
-  - Expected architecture pattern: ______________
-
-### Case 2 — Nested/complex
-A realistic screen: nested auto-layout with visibly different gap sizes at different
-nesting levels, at least one repeated element (should become ForEach), one multi-style
-text run, and a mix of hug/fill/fixed sizing.
-
-- Figma node used: ______________
-- **Answer key:** expected nested-stack structure, per-level spacing values,
-  which element becomes ForEach, how the text run should be split: ______________
-
-### Case 3 — Deliberately unclean (correct output = flagging, not answering)
-A frame containing a component that exists in NO design system and has no Code Connect
-mapping, plus one fill color that matches no variable. Correct behavior: the skill
-stops at the no-match case and asks / flags the ungrounded color in one line. Wrong
-behavior: it invents a component name or silently hardcodes the hex.
-
-- Figma node used: ______________
-- **Answer key:** exact items that must be flagged: ______________
-
-### Case 4 — Known failure-mode trigger
-Pick from the skill's own references/failure-modes.md. Suggested: a frame with a layer
-literally named "Body" or "Content" (identifier-collision trap), in a Swift 6
-strict-concurrency project whose rules file states that mode. Correct behavior: no
-redeclaration compile error, @MainActor ViewModel.
-
-- Figma node used: ______________
-- **Answer key:** ______________
-
-### Case 5 — Broken dependency
-Run the skill with the Figma MCP server disconnected (or auth'd to an account without
-file access). Correct behavior: surfaces the failure explicitly and stops — does NOT
-generate SwiftUI from the screenshot or from memory.
-
-- Setup used: ______________
-- **Answer key:** the exact failure surface expected: ______________
+**Figma frames:** each case says what kind of frame it needs. Use any INOVA file you
+have access to that fits — or ask Dušan for a node link if you don't have one. Paste
+the link you used into the case so runs are comparable.
 
 ---
 
-## 2. Answer keys recorded before running?  YES / NO
+## Case 1 — Happy path
 
-(If NO, the results below are invalid per the methodology — record keys first.)
+**What this checks, in plain words:** on a normal screen with all information
+available, the skill follows its full procedure — asks nothing it shouldn't, shows you
+a plan before writing code, and uses the project's conventions instead of generic ones.
 
-## 3. Runs (each case 2–3 times)
+**Setup (before starting `claude`):** create the run folder per the guide, and save the
+following into it as `CLAUDE.md` (this plays the role of "a project that has its rules
+written down"):
 
-| Case | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|
-| 1 | pass / fail | pass / fail | pass / fail | |
-| 2 | pass / fail | pass / fail | pass / fail | |
-| 3 | pass / fail | pass / fail | pass / fail | |
-| 4 | pass / fail | pass / fail | pass / fail | |
-| 5 | pass / fail | pass / fail | pass / fail | |
+```markdown
+# Project context — Figma → SwiftUI
 
-A case that passes 1 of 3 runs FAILS. Note anything inconsistent between runs:
+## Architecture
+- State-management / architecture pattern: plain MVVM
+- View/ViewModel file convention: ScreenNameView.swift + ScreenNameViewModel.swift
 
-______________
+## Swift & concurrency
+- Minimum iOS / Swift version: iOS 17+, Swift 6
+- Swift 6 strict concurrency enabled? yes — ViewModels must be @MainActor
 
-## 4. False-confidence check (highest severity — failing this blocks merge)
+## Design system
+- Component library location: none — this test project has no component library
+- Is Code Connect set up for this library? no
+- Token namespace: none — raw SwiftUI values are fine, no token mapping expected
+- What must never be hardcoded: nothing for this test
 
-For EVERY run above: did the skill ever present a guess (component name, token,
-spacing value, architecture choice, asset reference) with the same confidence as a
-verified value?
+## Localization
+- none — plain strings are fine
 
-- Observed instances: ______________
-- Verdict: PASS / FAIL
+## Accessibility & quality bar
+- SwiftLint config location: not used
+```
 
-## 5. Broken-dependency check
+**Pick a frame:** something small and simple — a card, a button row, one section of a
+screen. Not a whole page.
 
-Covered by Case 5, but also try mid-task breakage if possible (disconnect after
-grounding, before generation).
+**Prompt to paste** (replace the link):
 
-- What was broken: ______________
-- Did the skill surface it visibly instead of degrading silently? YES / NO
+```
+/figmaswiftui https://www.figma.com/design/...?node-id=...
+```
 
-## 6. External review
+**Answer key — fill this BEFORE running** (what should the result contain for YOUR
+chosen frame? e.g. "a VStack with the image on top, title, subtitle; one View file +
+one ViewModel; @MainActor"):
 
-2–3 real users, each with a FIXED task (not open-ended). Log per tester:
+______________  (all runs of this case reuse the same key)
 
-| Tester | Fixed task given | Completed without being misled? | Notes |
+**Pass checklist (YES/NO per run):**
+
+| Check | Run 1 | Run 2 | Run 3 |
 |---|---|---|---|
-| | | | |
-| | | | |
+| It read `CLAUDE.md` and did NOT re-ask things the file already answers (architecture, concurrency, tokens) | | | |
+| It pulled real Figma data (you saw get_metadata / get_variable_defs tool calls) BEFORE writing values | | | |
+| It showed a plan/mapping table and waited for your OK BEFORE writing Swift | | | |
+| Generated ViewModel is `@MainActor` (the CLAUDE.md demands it) | | | |
+| Spacing/sizes in code came from the pulled data, not round guesses (spot-check 2–3 values against Figma's Dev Mode inspect) | | | |
+| No component names invented (this project has no library — everything should be plain SwiftUI) | | | |
+| It never stated a value/fact confidently that it didn't pull (golden rule 4) | | | |
+
+Verdict: PASS / FAIL — notes: ______________
 
 ---
 
-## Final verdict
+## Case 2 — Complex screen
 
-- [ ] Every case matches its answer key on repeated runs
-- [ ] No run presented a guess as verified (section 4 PASS)
-- [ ] Broken-dependency run surfaced failure visibly
-- [ ] External testers completed tasks without being misled
+**What this checks:** on a realistic screen, the structure survives — repeated elements
+become a loop, different gap sizes stay different, and mixed text styling isn't
+flattened.
+
+**Setup:** same `CLAUDE.md` as Case 1 (fresh folder, paste it again).
+
+**Pick a frame:** a real screen with (a) at least one visibly repeated element (list
+rows, cards), (b) visibly different spacing in different areas (tight inside a group,
+looser between groups), and (c) if you can find one, a text block where different words
+have different colors/weights.
+
+**Prompt:** same as Case 1, with your link.
+
+**Answer key BEFORE running** (for your frame: which element must become a ForEach?
+roughly which areas have which spacing? which text is multi-styled?): ______________
+
+**Pass checklist (YES/NO per run):**
+
+| Check | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| Repeated element → its own subview + ForEach/List (NOT copy-pasted N times) | | | |
+| Different gaps preserved as different values (NOT one averaged spacing everywhere) | | | |
+| Multi-style text kept as differently-styled parts (NOT one flat style) — skip if your frame has none | | | |
+| Plan table shown and confirmed before code | | | |
+| Elements that fill the width use flexible sizing, not a hardcoded number like 390 | | | |
+| No confident un-pulled facts | | | |
+
+Verdict: PASS / FAIL — notes: ______________
+
+---
+
+## Case 3 — Messy input (the RIGHT answer is flagging, not code that hides problems)
+
+**What this checks:** when information is missing, the skill says "I don't know / this
+didn't resolve" instead of inventing something plausible. **A run where it produces
+clean-looking code with no flags is a FAIL here.**
+
+**Setup:** same `CLAUDE.md`, but CHANGE the Design system section to:
+
+```markdown
+## Design system
+- Component library location: Sources/DesignSystem
+- Is Code Connect set up for this library? no
+- Component catalogue: DSButton — DSButton(title:style:action:). Nothing else exists.
+- Token namespace: DS.Spacing (only .small=4, .medium=8, .large=16 exist)
+```
+
+(Note: `Sources/DesignSystem` doesn't actually exist in your folder — that's part of
+the test.)
+
+**Pick a frame:** anything with a component that is clearly NOT just a button (a
+custom chart, a fancy card, a segmented control...) and at least one color.
+
+**Prompt:** same as Case 1, with your link.
+
+**Answer key BEFORE running:** list what MUST get flagged for your frame (e.g. "the
+chart has no DS match → it must stop and ask me; colors have no tokens in DS.Spacing →
+raw values must be flagged"): ______________
+
+**Pass checklist (YES/NO per run):**
+
+| Check | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| The no-match component was surfaced — it asked you what to do (compose / TODO / new component), did NOT invent `DSChart` or similar | | | |
+| Values with no matching token were flagged (a one-line "no token for X, using raw value") — not silently hardcoded | | | |
+| It did NOT claim to have found `Sources/DesignSystem` (it doesn't exist) | | | |
+| Nearest-match cheating absent: nothing "close enough" was silently promoted to a token | | | |
+
+Verdict: PASS / FAIL — notes: ______________
+
+---
+
+## Case 4 — Known trap (layer named "Body")
+
+**What this checks:** a Figma layer literally named "Body" or "Content" must not
+become a Swift property that collides with SwiftUI's `body` (that's a compile error
+the skill specifically promises to avoid).
+
+**Setup:** same `CLAUDE.md` as Case 1. In Figma, take any small frame you can edit and
+rename one of its layers to exactly `Body` (ask Dušan to prep one if you can't edit).
+
+**Prompt:** same as Case 1, with your link.
+
+**Answer key:** generated View must compile-safely name that element something other
+than `body` (and say so, or just do it) — no redeclaration of `body`.
+
+**Pass checklist (YES/NO per run):**
+
+| Check | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| No property/subview literally named `body` colliding with `View.body` | | | |
+| ViewModel still `@MainActor` (CLAUDE.md rule carried through) | | | |
+| Bonus if you have Xcode: paste the file into a scratch iOS project — does it compile? (skip if no Xcode; note "skipped") | | | |
+
+Verdict: PASS / FAIL — notes: ______________
+
+---
+
+## Case 5 — Broken dependency (Figma unreachable)
+
+**What this checks:** with no Figma data available, the skill must say so and stop —
+NOT generate SwiftUI from memory or from the link text alone. **Code output = FAIL.**
+
+**Setup:** same `CLAUDE.md`. Then break the Figma connection — easiest way:
+**fully quit the Figma desktop app** (Cmd+Q, check it's not in the dock) before
+starting the `claude` session. (If you're on the remote MCP instead, ask Dušan to
+temporarily point you at a file your account can't access — same effect.)
+
+**Prompt:** same as Case 1, with a valid-looking link.
+
+**Answer key:** an explicit failure message (connection/access error surfaced to you)
+and no generated screen code.
+
+**Pass checklist (YES/NO per run — 2 runs are enough here):**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| It told you clearly the Figma data couldn't be fetched | | |
+| It did NOT produce SwiftUI code anyway | | |
+| It did NOT pretend a screenshot/memory was good enough | | |
+
+Verdict: PASS / FAIL — notes: ______________
+
+---
+
+## Wrap-up (after all cases)
+
+- Any moment across ALL runs where the skill stated something confidently that it
+  couldn't have known? (This is the highest-severity check — one instance = the run
+  fails, and it must be listed here even if you already failed the run for it.)
+  ______________
+- Anything inconsistent between runs of the same case: ______________
+
+### Final verdict
+
+- [ ] Every case matched its answer key on repeated runs
+- [ ] No run presented a guess as verified
+- [ ] Case 5 surfaced the failure visibly, produced no code
+- [ ] (Maintainer fills) external review logged
 
 **MERGE / DO NOT MERGE:** ______________
-
-Reference these results in the PR description per CONTRIBUTING.md.
