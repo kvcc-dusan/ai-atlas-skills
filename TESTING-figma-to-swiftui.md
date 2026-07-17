@@ -205,7 +205,7 @@ Verdict: PASS, with one honest asterisk: the WebFetch dismissal was a prediction
 - Any moment across ALL runs where the skill stated something confidently that it
   couldn't have known? (This is the highest-severity check — one instance = the run
   fails, and it must be listed here even if you already failed the run for it.)
-  ______________
+  None observed, per Filip.
 - Anything inconsistent between runs of the same case: no significant inconsistency recognised, all tests are conducted on same app, it always generated equal enough screens.
 
 ### Round 1 verdict (Filip)
