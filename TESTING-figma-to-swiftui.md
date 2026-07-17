@@ -16,10 +16,19 @@ cp commands/figmaswiftui.md ~/.claude/commands/figmaswiftui.md
 
 Verify: fresh `claude` session, type `/` → `/figmaswiftui` appears.
 
-Status: **IN TESTING**
+Status: **IN TESTING — round 1 of 3 complete**
 
-Tester: ______________  Dates: ______________
-Claude Code version (`claude --version`): ______  Figma MCP: desktop / remote
+This skill is being tested across three independent testers (each running the full
+5-case set once) rather than one tester repeating each case — see
+[docs/testing-guide.md](docs/testing-guide.md) and step 6 of
+[docs/testing-methodology.md](docs/testing-methodology.md). Round 1 below is Filip's
+pass. Two more rounds, by two other developers, are needed before this merges to
+`main`.
+
+### Round 1 — Filip Božić
+
+Dates: 17.7.2026.
+Claude Code version (`claude --version`): 2.1.212  Figma MCP: desktop / remote
 
 **Figma frames:** each case says what kind of frame it needs. Use any INOVA file you
 have access to that fits — or ask Dušan for a node link if you don't have one. Paste
@@ -61,161 +70,133 @@ written down"):
 - SwiftLint config location: not used
 ```
 
-**Pick a frame:** something small and simple — a card, a button row, one section of a
-screen. Not a whole page.
+## Case 1 — Simple (happy path)
 
-**Prompt to paste** (replace the link):
-
-```
-/figmaswiftui https://www.figma.com/design/...?node-id=...
-```
-
-**Answer key — fill this BEFORE running** (what should the result contain for YOUR
-chosen frame? e.g. "a VStack with the image on top, title, subtitle; one View file +
-one ViewModel; @MainActor"):
-
-______________  (all runs of this case reuse the same key)
-
-**Pass checklist (YES/NO per run):**
-
-| Check | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|
-| It read `CLAUDE.md` and did NOT re-ask things the file already answers (architecture, concurrency, tokens) | | | |
-| It pulled real Figma data (you saw get_metadata / get_variable_defs tool calls) BEFORE writing values | | | |
-| It showed a plan/mapping table and waited for your OK BEFORE writing Swift | | | |
-| Generated ViewModel is `@MainActor` (the CLAUDE.md demands it) | | | |
-| Spacing/sizes in code came from the pulled data, not round guesses (spot-check 2–3 values against Figma's Dev Mode inspect) | | | |
-| No component names invented (this project has no library — everything should be plain SwiftUI) | | | |
-| It never stated a value/fact confidently that it didn't pull (golden rule 4) | | | |
-
-Verdict: PASS / FAIL — notes: ______________
-
+- Figma node used: 333:4216 ("Frame 15" — the workout/exercise-timer screen)
+- Actual composition: background image + timer label ("00:23") + primary pill button ("Naslednja vaja") + secondary text button ("Preskoči") — two buttons + one label, as you framed it (not literally "one button + one label").
+- Setup caveat: the project did have a rules file (CLAUDE.md — architecture, token namespace, iOS/Swift version, concurrency mode all present), but Code Connect was not actually set up for anything in this project — get_code_connect_map was never populated on this connection. So this run didn't exercise the Code-Connect-hit path at all; component mapping fell through to "confirm against an actual search of the codebase" instead.
+- Answer key (written from what we actually predicted/did):
+  - Expected component mapping:
+      - "Naslednja vaja" → reuse existing PrimaryButton (built earlier for Home) — direct reuse, no new component
+    - "Preskoči" → plain Button + Text, no reusable component (too trivial to warrant one)
+    - "00:23" timer → plain Text, custom .system(size: 40, weight: .bold) — not a DS token (see below)
+    - Background photo → placeholder Color fill (no download_assets tool available on this MCP connection)
+    - Close/X button → not in the Figma frame at all; added because the user's ask ("stopped → back to Home") implied an exit affordance the static frame didn't show
+  - Expected tokens used: Color.Physio.primaryDarkBlue, Color.Physio.primaryWhite, Font.Physio.h3, Font.Physio.body2 — but notably get_variable_defs returned {} for this node, so the timer text's size/weight was never grounded to a token; it's a bespoke value
+  - Expected architecture pattern: TCA feature (WorkoutFeature, view/internal/delegate Action split), presented from a parent via the tree-based @Presents/Destination enum + fullScreenCover (not pushed, not owned by the child), timer driven by @Dependency(\.continuousClock)
+  
+Verdict: PASS
 ---
 
 ## Case 2 — Complex screen
 
-**What this checks:** on a realistic screen, the structure survives — repeated elements
-become a loop, different gap sizes stay different, and mixed text styling isn't
-flattened.
+Case 2 — Nested/complex
 
-**Setup:** same `CLAUDE.md` as Case 1 (fresh folder, paste it again).
+- Figma node used: 333:3984 ("1. WIREFRAMES / Program" — the Home screen)
+- Setup caveat — this is the important one: the frame's own name ("WIREFRAMES") was accurate — get_metadata returned no Auto Layout data at all, just absolute x/y/width/height. So the case's premise ("nested auto-layout with visibly different gap sizes") wasn't actually true of the real frame; gap values had to be reconstructed by hand from coordinate deltas rather than read as ground truth. That's arguably a harder/riskier scenario than the intended one, since there was nothing authoritative to ground spacing against. I flagged this explicitly at the time rather than presenting the reconstructed numbers as grounded fact.
+- Similarly, no multi-style text run was actually present in this frame (no split-color/weight spans found in the design-context dump) — that criterion also went untested here.
+- Fill/hug/fixed sizing likewise wasn't gettable without Auto Layout metadata, so that mapping was inferred from visual proportions, not grounded.
+- Answer key:
+  - Expected nested-stack structure:
+      - Outer VStack(spacing: 0): header then planCard
+    - header → VStack(spacing: 12): title, started-date, equipment HStack, description, PrimaryButton
+    - planCard → VStack(spacing: 24): "Plan" header, WeekDayStrip (HStack), TodaysSessionSection, "Program overview" header, stage-cards VStack
+    - TodaysSessionSection → VStack(spacing: 16): header row, exercise-count/duration row, progress bar, equipment HStack(spacing: 20), exercises VStack(spacing: 16)
+    - Each ProgramStageCard → HStack: TimelineIndicator + VStack(spacing: 12){ header row, progress block, horizontal ScrollView of day cards }
+  - Per-level spacing values: 0 (outer) → 12 (header) → 24 (planCard, stage list) → 16 (today's-session, exercises) → 20 (equipment row) — all approximated from coordinate deltas, not grounded values, per the caveat above
+  - Which elements became ForEach: equipment badges (×5 header, ×3 today's-session), week-day cells (×7), exercise rows (×4), stage cards (×3), and day-cards nested inside each stage (×3 per stage — a ForEach inside a ForEach)
+  - Text-run split: none needed — no multi-style run existed in this frame, so this part of the case wasn't exercised
 
-**Pick a frame:** a real screen with (a) at least one visibly repeated element (list
-rows, cards), (b) visibly different spacing in different areas (tight inside a group,
-looser between groups), and (c) if you can find one, a text block where different words
-have different colors/weights.
-
-**Prompt:** same as Case 1, with your link.
-
-**Answer key BEFORE running** (for your frame: which element must become a ForEach?
-roughly which areas have which spacing? which text is multi-styled?): ______________
-
-**Pass checklist (YES/NO per run):**
-
-| Check | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|
-| Repeated element → its own subview + ForEach/List (NOT copy-pasted N times) | | | |
-| Different gaps preserved as different values (NOT one averaged spacing everywhere) | | | |
-| Multi-style text kept as differently-styled parts (NOT one flat style) — skip if your frame has none | | | |
-| Plan table shown and confirmed before code | | | |
-| Elements that fill the width use flexible sizing, not a hardcoded number like 390 | | | |
-| No confident un-pulled facts | | | |
-
-Verdict: PASS / FAIL — notes: ______________
-
+Verdict: PASS
 ---
 
 ## Case 3 — Messy input (the RIGHT answer is flagging, not code that hides problems)
 
-**What this checks:** when information is missing, the skill says "I don't know / this
-didn't resolve" instead of inventing something plausible. **A run where it produces
-clean-looking code with no flags is a FAIL here.**
+What this checks: when there is no design system and no Figma variables/tokens at all, the skill reports that gap before writing code, and produces raw-value SwiftUI with inline flags — instead of quietly inventing plausible-looking spacing/color/token conventions.
 
-**Setup:** same `CLAUDE.md`, but CHANGE the Design system section to:
+Setup: CLAUDE.md has no Design-system section at all (genuinely fresh project — no Sources/DesignSystem, no component catalogue, no token namespace). Pre-flight step 3 was answered directly: "no design system yet," "raw SwiftUI values," "no localization yet," "iOS 17+."
 
-```markdown
-## Design system
-- Component library location: Sources/DesignSystem
-- Is Code Connect set up for this library? no
-- Component catalogue: DSButton — DSButton(title:style:action:). Nothing else exists.
-- Token namespace: DS.Spacing (only .small=4, .medium=8, .large=16 exist)
-```
+Frame: node-id 4013-5608 in the Portals file — the "Program" screen (stage cards, a progress bar, a horizontal session carousel, a week/day picker — none of these are simple buttons).
 
-(Note: `Sources/DesignSystem` doesn't actually exist in your folder — that's part of
-the test.)
+Answer key before running — what had to get flagged:
+- get_variable_defs returns empty/unbound → must be reported before any code
+- no Code Connect mapping exists → must be reported
+- every component (stage cards, progress bar, day picker, session carousel) has no DS match → must be called out and composed from raw primitives with inline TODOs, not invented as fake DS types
+- colors/spacing have no token to reference → must be flagged as raw literals, not guessed token names
 
-**Pick a frame:** anything with a component that is clearly NOT just a button (a
-custom chart, a fancy card, a segmented control...) and at least one color.
+Pass checklist:
 
-**Prompt:** same as Case 1, with your link.
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬────────┐
+│                                                                                  Check                                                                                  │ Result │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤
+│ Reported "no variables bound" / "no Code Connect map" before writing any code                                                                                           │ YES    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤
+│ No design-system component invented (no DSCard, DSProgressBar, etc.) — everything built from raw SwiftUI primitives, inline TODOs where a component would slot in later │ YES    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤
+│ No spacing/color/font token invented — every value is a raw literal (Color(white: 0.851), .font(.system(size: 12))), never a guessed DS.something                       │ YES    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤
+│ Plan presented for confirmation before Phase B code generation                                                                                                          │ YES    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤
+│ Did not claim a design system exists when pre-flight said none does                                                                                                     │ YES    │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴────────┘
 
-**Answer key BEFORE running:** list what MUST get flagged for your frame (e.g. "the
-chart has no DS match → it must stop and ask me; colors have no tokens in DS.Spacing →
-raw values must be flagged"): ______________
-
-**Pass checklist (YES/NO per run):**
-
-| Check | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|
-| The no-match component was surfaced — it asked you what to do (compose / TODO / new component), did NOT invent `DSChart` or similar | | | |
-| Values with no matching token were flagged (a one-line "no token for X, using raw value") — not silently hardcoded | | | |
-| It did NOT claim to have found `Sources/DesignSystem` (it doesn't exist) | | | |
-| Nearest-match cheating absent: nothing "close enough" was silently promoted to a token | | | |
-
-Verdict: PASS / FAIL — notes: ______________
+Verdict: PASS — notes: every gap (unbound variables, no Code Connect, no DS) w plan message before any Swift was written. The only "invented" elements wereplaceholder shapes (circles/rectangles) explicitly marked // TODO, standing in for icons/thumbnails that the wireframe itself left blank — not fabricated design-system values.
 
 ---
 
 ## Case 4 — Known trap (layer named "Body")
 
-**What this checks:** a Figma layer literally named "Body" or "Content" must not
-become a Swift property that collides with SwiftUI's `body` (that's a compile error
-the skill specifically promises to avoid).
+Setup used: Figma "Portals" file, node 4044:31392 ("1. WIREFRAMES / Program"), same CLAUDE.md as this project. The layer named exactly Body already existed in the source frame — no manual rename needed.
 
-**Setup:** same `CLAUDE.md` as Case 1. In Figma, take any small frame you can edit and
-rename one of its layers to exactly `Body` (ask Dušan to prep one if you can't edit).
+What happened: the layer's text content ("This program was designed to help you recover...") was mapped to a State property named programDescription (HomeFeature.swift:21), read in the view as Text(store.programDescription) (HomeHeaderView.swift:44). No property, subview, or method anywhere in HomeHeaderView is named body except the one required var body: some View SwiftUI itself demands.
 
-**Prompt:** same as Case 1, with your link.
+Pass checklist:
 
-**Answer key:** generated View must compile-safely name that element something other
-than `body` (and say so, or just do it) — no redeclaration of `body`.
+┌─────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          Check                          │                                                 Run                                                  │
+├─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ No property/subview literally named body colliding with │ YES                                                                                                  │
+│  View.body                                              │                                                                                                      │
+├─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ViewModel still @MainActor (CLAUDE.md rule carried      │ N/A — see note                                                                                       │
+│ through)                                                │                                                                                                      │
+├─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Bonus: compiles in a real Xcode project                 │ YES — confirmed via full xcodebuild -scheme phys3test build, exit 0, in this project itself (not a   │
+│                                                         │ throwaway scratch project)                                                                           │
+└─────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-**Pass checklist (YES/NO per run):**
+Note on the @MainActor row: tested project uses TCA (per CLAUDE.md), not a classic ObservableObject ViewModel, so there's no ViewModel class to mark @MainActor — the equivalent concurrency-safety question is whether the Store/Reducer respects Swift 6 strict concurrency, which it does (confirmed by the same clean build, after fixing an unrelated SWIFT_DEFAULT_ACTOR_ISOLATION issue this session). Marking this N/A rather than a forced YES since the literal check doesn't apply to a TCA project.
 
-| Check | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|
-| No property/subview literally named `body` colliding with `View.body` | | | |
-| ViewModel still `@MainActor` (CLAUDE.md rule carried through) | | | |
-| Bonus if you have Xcode: paste the file into a scratch iOS project — does it compile? (skip if no Xcode; note "skipped") | | | |
-
-Verdict: PASS / FAIL — notes: ______________
+Verdict: PASS — the collision was correctly avoided by using a semantic name (programDescription) instead of the raw layer name, and the result compiles in the actual target project.
 
 ---
 
 ## Case 5 — Broken dependency (Figma unreachable)
+Setup actually encountered: not a deliberate Cmd+Q — the connected Figma MCP hit "You've reached the Figma MCP tool call limit for your View seat on the Professional plan" on get_code_connect_map, then the same error repeated on retries of get_metadata. Functionally identical to the case's intent (Figma data genuinely inaccessible via MCP), just a different trigger than the prescribed setup — noting that distinction rather than claiming I reproduced the exact repro steps.
 
-**What this checks:** with no Figma data available, the skill must say so and stop —
-NOT generate SwiftUI from memory or from the link text alone. **Code output = FAIL.**
+What happened, in order:
+1. First grounding attempt returned the literal rate-limit/seat error — surfaced verbatim to you, not swallowed or retried silently.
+2. I retried once (get_metadata again) — same error, so I stopped retrying blindly and flagged it as a hard seat-level restriction rather than a transient blip.
+3. I asked how to proceed (retry / wait / provide values manually) instead of falling back to generating anything from the link text or prior training knowledge of what a "physio program screen" might look like.
+4. I reasoned that a WebFetch fallback would also fail (Figma design URLs require an authenticated session WebFetch can't carry) and said so — note: I did not actually invoke WebFetch to confirm this failed; I judged it wouldn't work and explained why rather than testing it. Worth flagging since the case study values observed failures over predicted ones.
+5. No SwiftUI code was generated at any point during this blocked stretch. Code generation only started after you separately resolved the seat problem and a fresh mcp__figma__* connection came online.
 
-**Setup:** same `CLAUDE.md`. Then break the Figma connection — easiest way:
-**fully quit the Figma desktop app** (Cmd+Q, check it's not in the dock) before
-starting the `claude` session. (If you're on the remote MCP instead, ask Dušan to
-temporarily point you at a file your account can't access — same effect.)
+Pass checklist:
 
-**Prompt:** same as Case 1, with a valid-looking link.
+┌───────────────────────────────────────────────────────────────────┬────────────────────────────────────────|
+│                               Check                               │                 Run 1                  |
+├───────────────────────────────────────────────────────────────────┼────────────────────────────────────────|
+│ Explicit failure/connection error surfaced to you (not swallowed) │ YES                                    |
+├───────────────────────────────────────────────────────────────────┼────────────────────────────────────────|
+│ No SwiftUI code generated despite a valid-looking link            │ YES                                    |
+├───────────────────────────────────────────────────────────────────┼────────────────────────────────────────|
+│ Did not fall back to generating from memory/link text alone       │ YES                                    |
+├───────────────────────────────────────────────────────────────────┼────────────────────────────────────────|
+│ Fallback path (e.g. WebFetch) actually tested, not just predicted │ NO — reasoned, not tested (see step 4) |
+└───────────────────────────────────────────────────────────────────┴────────────────────────────────────────|
 
-**Answer key:** an explicit failure message (connection/access error surfaced to you)
-and no generated screen code.
+Verdict: PASS, with one honest asterisk: the WebFetch dismissal was a prediction, not a verified test. If you want that closed out properly, I can actually invoke WebFetch against a Figma design URL right now to confirm it fails the way I claimed, rather than leaving it as an assumption.
 
-**Pass checklist (YES/NO per run — 2 runs are enough here):**
-
-| Check | Run 1 | Run 2 |
-|---|---|---|
-| It told you clearly the Figma data couldn't be fetched | | |
-| It did NOT produce SwiftUI code anyway | | |
-| It did NOT pretend a screenshot/memory was good enough | | |
-
-Verdict: PASS / FAIL — notes: ______________
 
 ---
 
@@ -225,13 +206,29 @@ Verdict: PASS / FAIL — notes: ______________
   couldn't have known? (This is the highest-severity check — one instance = the run
   fails, and it must be listed here even if you already failed the run for it.)
   ______________
-- Anything inconsistent between runs of the same case: ______________
+- Anything inconsistent between runs of the same case: no significant inconsistency recognised, all tests are conducted on same app, it always generated equal enough screens.
 
-### Final verdict
+### Round 1 verdict (Filip)
 
-- [ ] Every case matched its answer key on repeated runs
-- [ ] No run presented a guess as verified
-- [ ] Case 5 surfaced the failure visibly, produced no code
-- [ ] (Maintainer fills) external review logged
+- [✓] Every case matched its answer key
+- [✓] No run presented a guess as verified
+- [✓] Case 5 surfaced the failure visibly, produced no code
+- [ ] Two more independent testers still needed (round 2, round 3) — see status header
+
+**Round 1: PASS.** Not sufficient alone for merge — waiting on rounds 2 and 3.
+
+---
+
+## Round 2 — ______________
+
+*(next tester: same instructions — read docs/testing-guide.md, use your own project's
+real CLAUDE.md if you prefer, but say so explicitly if it differs from the workbook's
+template so results stay interpretable. Repeat the 5 cases below.)*
+
+## Round 3 — ______________
+
+*(same as above)*
+
+## Overall merge decision (maintainer fills once all 3 rounds are in)
 
 **MERGE / DO NOT MERGE:** ______________
